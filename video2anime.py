@@ -11,12 +11,12 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 def parse_args():
     desc = "Tensorflow implementation of AnimeGANv2"
     parser = argparse.ArgumentParser(description=desc)
-    parser.add_argument('--video', type=str, default='video/input/'+ '2.mp4',
+    parser.add_argument('--dir', type=str, default='video/input/',
+                        help='dir path')
+    parser.add_argument('--video', type=str, default='2.mp4',
                         help='video file or number for webcam')
-    parser.add_argument('--checkpoint_dir', type=str, default='../checkpoint/generator_Paprika_weight',
-                        help='Directory name to save the checkpoints')
-    parser.add_argument('--output', type=str, default='video/output/' + 'Paprika',
-                        help='output path')
+    parser.add_argument('--model', type=str, default='p',
+                        help='checkpoint type')
     parser.add_argument('--output_format', type=str, default='MP4V',
                         help='codec used in VideoWriter when saving video to file')
     """
@@ -83,10 +83,10 @@ def cvt2anime_video(video, output, checkpoint_dir, output_format='MP4V'):
             print(" [*] Failed to find a checkpoint")
             return
          
-        video_out = cv2.VideoWriter(os.path.join(output, vid_name.rsplit('.', 1)[0] + "_AnimeGANv2.mp4"), codec, fps, (width, height))
+        video_out = cv2.VideoWriter(os.path.join(output, vid_name.rsplit('.', 1)[0] + "_ani.mp4"), codec, fps, (width, height))
 
         pbar = tqdm(total=total, ncols=80)
-        pbar.set_description(f"Making: {os.path.basename(video).rsplit('.', 1)[0] + '_AnimeGANv2.mp4'}")
+        pbar.set_description(f"Making: {os.path.basename(video).rsplit('.', 1)[0] + '_ani.mp4'}")
         while True:
             ret, frame = vid.read()
             if not ret:
@@ -100,10 +100,22 @@ def cvt2anime_video(video, output, checkpoint_dir, output_format='MP4V'):
         pbar.close()
         vid.release()
         video_out.release()
-        return os.path.join(output, vid_name.rsplit('.', 1)[0] + "_AnimeGANv2.mp4")
+        return os.path.join(output, vid_name.rsplit('.', 1)[0] + "_ani.mp4")
+
+def get_checkpoint_dir(model):
+    if model == 'h':
+        return './checkpoint/generator_Hayao_weight'
+    if model == 'p':
+        return './checkpoint/generator_Paprika_weight'
+    if model == 's':
+        return './checkpoint/generator_Shinkai_weight'
+    return None
 
 if __name__ == '__main__':
     arg = parse_args()
-    check_folder(arg.output)
-    info = cvt2anime_video(arg.video, arg.output, arg.checkpoint_dir)
+    dir = arg.dir
+    check_folder(dir)
+    checkpoint_dir = get_checkpoint_dir(arg.model)
+    video_path = os.path.join(dir, arg.video)
+    info = cvt2anime_video(video_path, dir, checkpoint_dir)
     print(f'output video: {info}')
